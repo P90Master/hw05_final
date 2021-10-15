@@ -17,7 +17,7 @@ class Group(models.Model):
 
 
 class Post(CreatedModel):
-    text = models.TextField('Текст поста', help_text = 'Текст нового поста')
+    text = models.TextField('Текст поста', help_text='Текст нового поста')
     image = models.ImageField(
         'Картинка',
         upload_to='posts/',
@@ -50,7 +50,9 @@ class Post(CreatedModel):
 
 
 class Comment(CreatedModel):
-    text = models.TextField('Текст комментария', help_text='Текст нового комментария')
+    text = models.TextField(
+        'Текст комментария', help_text='Текст нового комментария'
+    )
 
     author = models.ForeignKey(
         User,
