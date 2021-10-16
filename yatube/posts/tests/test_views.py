@@ -102,14 +102,11 @@ class TaskPagesTests(TestCase):
         post = TaskPagesTests.post
         response = self.authorized_client.get(reverse('posts:index'))
 
-        title = response.context['title']
-
         first_object = response.context['page_obj'][0]
         post_text = first_object.text
         post_author = first_object.author
         post_image = first_object.image
 
-        self.assertEqual(title, 'Последние обновления на сайте')
         self.assertEqual(post_text, post.text)
         self.assertEqual(post_image, post.image)
         self.assertEqual(post_author, user)
@@ -118,20 +115,16 @@ class TaskPagesTests(TestCase):
         """Шаблон group_list сформирован с правильным контекстом."""
         user = TaskPagesTests.user
         post = TaskPagesTests.post
-        group = TaskPagesTests.group
         response = self.authorized_client.get(reverse(
             'posts:group_list',
             kwargs={'group_name': 'test-slug'}
         ))
-
-        title = response.context['title']
 
         first_object = response.context['page_obj'][0]
         post_text = first_object.text
         post_author = first_object.author
         post_image = first_object.image
 
-        self.assertEqual(title, group.title)
         self.assertEqual(post_text, post.text)
         self.assertEqual(post_author, user)
         self.assertEqual(post_image, post.image)
@@ -155,8 +148,6 @@ class TaskPagesTests(TestCase):
             kwargs={'post_id': post.pk}
         ))
 
-        title = response.context['title']
-
         posts_amount = response.context['posts_amount']
 
         post_taked = response.context['post']
@@ -164,7 +155,6 @@ class TaskPagesTests(TestCase):
         post_author = post_taked.author
         post_image = post_taked.image
 
-        self.assertEqual(title, f'Пост {post.text}')
         self.assertEqual(posts_amount, 1)
         self.assertEqual(post_text, post.text)
         self.assertEqual(post_author, user)
@@ -179,8 +169,6 @@ class TaskPagesTests(TestCase):
             kwargs={'username': 'test_user'}
         ))
 
-        title = response.context['title']
-
         user_full_name = response.context['user_full_name']
 
         posts_amount = response.context['posts_amount']
@@ -190,9 +178,6 @@ class TaskPagesTests(TestCase):
         post_author = first_object.author
         post_image = first_object.image
 
-        self.assertEqual(
-            title, f'Профайл пользователя {user.get_full_name()}'
-        )
         self.assertEqual(user_full_name, user.get_full_name())
         self.assertEqual(posts_amount, 1)
         self.assertEqual(post_text, post.text)
@@ -228,11 +213,10 @@ class TaskPagesTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def test_following(self):
-        """Пользователь может подписываться и отписываться."""
+        """Пользователь может подписываться"""
         user = TaskPagesTests.user
         user2 = TaskPagesTests.user2
 
-        # Подписка
         response = self.authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': user2.username},
@@ -251,16 +235,16 @@ class TaskPagesTests(TestCase):
             ).exists()
         )
 
-        # Раздел 'Избранное' содержит 1 пост
-        response = self.authorized_client.get(reverse(
-            'posts:follow_index',
-        ))
-        posts_list = response.context['page_obj']
-        self.assertTrue(
-            len(posts_list) == 1
-        )
+    def test_unfollowing(self):
+        """Пользователь может отписываться"""
+        user = TaskPagesTests.user
+        user2 = TaskPagesTests.user2
 
-        # Отписка
+        response = self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': user2.username},
+        ))
+
         response = self.authorized_client.get(reverse(
             'posts:profile_unfollow',
             kwargs={'username': user2.username},
@@ -279,7 +263,25 @@ class TaskPagesTests(TestCase):
             ).exists()
         )
 
-        # Раздел 'Избранное' содержит 0 постов
+    def test_follow_index_follower(self):
+        """Проверка содержимого избранного у подписчика"""
+        user2 = TaskPagesTests.user2
+
+        response = self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': user2.username},
+        ))
+
+        response = self.authorized_client.get(reverse(
+            'posts:follow_index',
+        ))
+        posts_list = response.context['page_obj']
+        self.assertTrue(
+            len(posts_list) == 1
+        )
+
+    def test_follow_index_guest(self):
+        """Проверка содержимого избранного у пользователя без подписок"""
         response = self.authorized_client.get(reverse(
             'posts:follow_index',
         ))

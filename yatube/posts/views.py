@@ -10,19 +10,22 @@ from yatube.settings import PAGE_ITEMS_NUM
 User = get_user_model()
 
 
-def index(request):
-    template = 'posts/index.html'
-
-    title = 'Последние обновления на сайте'
-
-    posts = Post.objects.all()
-
-    paginator = Paginator(posts, PAGE_ITEMS_NUM)
+def posts_paginate(request, posts_list):
+    paginator = Paginator(posts_list, PAGE_ITEMS_NUM)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    return page_obj
+
+
+def index(request):
+    template = 'posts/index.html'
+
+    posts = Post.objects.all()
+
+    page_obj = posts_paginate(request, posts)
+
     context = {
-        'title': title,
         'page_obj': page_obj,
     }
 
@@ -88,12 +91,9 @@ def profile(request, username):
 
     posts = author.posts.all()
 
-    paginator = Paginator(posts, PAGE_ITEMS_NUM)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = posts_paginate(request, posts)
 
     user_full_name = author.get_full_name()
-    title = f'Профайл пользователя {user_full_name}'
 
     posts_amount = posts.count()
 
@@ -101,11 +101,13 @@ def profile(request, username):
     followers = author.following.all()
     users_followers = [follower.user for follower in followers]
     following = user in users_followers
+    # following = Follow.objects.filter(user=user, author=author).exists()
+    # Pytest выдает ошибку:
+    # TypeError: 'AnonymousUser' object is not iterable
 
     context = {
         'page_obj': page_obj,
         'user_full_name': user_full_name,
-        'title': title,
         'posts_amount': posts_amount,
         'author': author,
         'following': following,
@@ -115,20 +117,19 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
-    post = Post.objects.get(pk=post_id)
+    post = get_object_or_404(Post, pk=post_id)
 
     post_author = post.author
-    posts_amount = Post.objects.filter(author=post_author).count()
+    posts_amount = post_author.posts.count()
     post_comments = post.comments.all()
 
     text_truncated = post.text[:30]
-    title = f'Пост {text_truncated}'
 
     form = CommentForm()
 
     context = {
         'post': post,
-        'title': title,
+        'text_truncated': text_truncated,
         'posts_amount': posts_amount,
         'form': form,
         'comments': post_comments,
@@ -139,16 +140,14 @@ def post_detail(request, post_id):
 def group_posts(request, group_name):
     group = get_object_or_404(Group, slug=group_name)
 
-    title = group.title
+    group_name = group.title
 
     posts = group.posts.all()
 
-    paginator = Paginator(posts, PAGE_ITEMS_NUM)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = posts_paginate(request, posts)
 
     context = {
-        'title': title,
+        'group_name': group_name,
         'page_obj': page_obj
     }
 
@@ -157,20 +156,13 @@ def group_posts(request, group_name):
 
 @login_required
 def follow_index(request):
-    title = 'Последние обновления на сайте'
-
     user = request.user
-    followings = Follow.objects.filter(user=user)
-    authors = [following.author for following in followings]
 
-    posts = Post.objects.filter(author__in=authors)
+    posts = Post.objects.filter(author__following__user=user)
 
-    paginator = Paginator(posts, PAGE_ITEMS_NUM)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = posts_paginate(request, posts)
 
     context = {
-        'title': title,
         'page_obj': page_obj,
     }
     return render(request, 'posts/follow.html', context)
@@ -182,8 +174,7 @@ def profile_follow(request, username):
     user = request.user
 
     if user != author:
-        if not Follow.objects.filter(user=user, author=author).exists():
-            Follow.objects.create(user=user, author=author)
+        Follow.objects.get_or_create(user=user, author=author)
 
     return redirect('posts:profile', username=username)
 
@@ -193,7 +184,7 @@ def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
     user = request.user
 
-    follow = Follow.objects.get(user=user, author=author)
+    follow = get_object_or_404(Follow, user=user, author=author)
     follow.delete()
 
     return redirect('posts:profile', username=username)

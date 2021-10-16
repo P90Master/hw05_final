@@ -2,6 +2,8 @@
 {% load thumbnail %}
 {% load cache %}
 
+{% block title %}Избранное{% endblock %}
+
 {% cache 20 index_page %}
 {% block content %}
   <div class="container">

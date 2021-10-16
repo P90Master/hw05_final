@@ -44,6 +44,8 @@ class PostFormTests(TestCase):
         """Форма создает запись в Post."""
         user = PostFormTests.user
         posts_count = Post.objects.count()
+        # Не понял - объект какого класса?
+        # p.s. Делал как в тренажере
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'

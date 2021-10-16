@@ -7,19 +7,64 @@ User = get_user_model()
 
 
 class StaticURLTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='test_user')
+
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Тестовое описание',
+        )
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text='Тестовый пост',
+        )
+
     def setUp(self):
-        self.guest_client = Client()
+        self.user = StaticURLTests.user
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_homepage(self):
-        response = self.guest_client.get('/')
+        response = self.authorized_client.get('/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_followpage(self):
+        response = self.authorized_client.get('/follow/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_group(self):
+        group_slug = StaticURLTests.group.slug
+        response = self.authorized_client.get(f'/group/{group_slug}/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_profile(self):
+        username = StaticURLTests.user.username
+        response = self.authorized_client.get(f'/profile/{username}/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_detail(self):
+        post_id = StaticURLTests.post.pk
+        response = self.authorized_client.get(f'/posts/{post_id}/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_edit(self):
+        post_id = StaticURLTests.post.pk
+        response = self.authorized_client.get(f'/posts/{post_id}/edit/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_create(self):
+        response = self.authorized_client.get('/create/')
         self.assertEqual(response.status_code, 200)
 
     def test_about_author(self):
-        response = self.guest_client.get('/about/author/')
+        response = self.authorized_client.get('/about/author/')
         self.assertEqual(response.status_code, 200)
 
     def test_about_tech(self):
-        response = self.guest_client.get('/about/tech/')
+        response = self.authorized_client.get('/about/tech/')
         self.assertEqual(response.status_code, 200)
 
 
