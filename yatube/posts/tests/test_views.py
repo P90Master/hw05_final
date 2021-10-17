@@ -169,8 +169,6 @@ class TaskPagesTests(TestCase):
             kwargs={'username': 'test_user'}
         ))
 
-        user_full_name = response.context['user_full_name']
-
         posts_amount = response.context['posts_amount']
 
         first_object = response.context['page_obj'][0]
@@ -178,7 +176,6 @@ class TaskPagesTests(TestCase):
         post_author = first_object.author
         post_image = first_object.image
 
-        self.assertEqual(user_full_name, user.get_full_name())
         self.assertEqual(posts_amount, 1)
         self.assertEqual(post_text, post.text)
         self.assertEqual(post_author, user)
@@ -240,10 +237,7 @@ class TaskPagesTests(TestCase):
         user = TaskPagesTests.user
         user2 = TaskPagesTests.user2
 
-        response = self.authorized_client.get(reverse(
-            'posts:profile_follow',
-            kwargs={'username': user2.username},
-        ))
+        Follow.objects.create(user=user, author=user2)
 
         response = self.authorized_client.get(reverse(
             'posts:profile_unfollow',
@@ -265,12 +259,10 @@ class TaskPagesTests(TestCase):
 
     def test_follow_index_follower(self):
         """Проверка содержимого избранного у подписчика"""
+        user = TaskPagesTests.user
         user2 = TaskPagesTests.user2
 
-        response = self.authorized_client.get(reverse(
-            'posts:profile_follow',
-            kwargs={'username': user2.username},
-        ))
+        Follow.objects.create(user=user, author=user2)
 
         response = self.authorized_client.get(reverse(
             'posts:follow_index',
@@ -285,6 +277,7 @@ class TaskPagesTests(TestCase):
         response = self.authorized_client.get(reverse(
             'posts:follow_index',
         ))
+
         posts_list = response.context['page_obj']
         self.assertTrue(
             len(posts_list) == 0

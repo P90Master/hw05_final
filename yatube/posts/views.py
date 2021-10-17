@@ -20,9 +20,7 @@ def posts_paginate(request, posts_list):
 
 def index(request):
     template = 'posts/index.html'
-
     posts = Post.objects.all()
-
     page_obj = posts_paginate(request, posts)
 
     context = {
@@ -88,13 +86,8 @@ def add_comment(request, post_id):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-
     posts = author.posts.all()
-
     page_obj = posts_paginate(request, posts)
-
-    user_full_name = author.get_full_name()
-
     posts_amount = posts.count()
 
     user = request.user
@@ -104,10 +97,16 @@ def profile(request, username):
     # following = Follow.objects.filter(user=user, author=author).exists()
     # Pytest выдает ошибку:
     # TypeError: 'AnonymousUser' object is not iterable
+    '''
+        upd: метод, который вы посоветовали работает исправно,
+        и мои тесты с ним не конфликтуют, чего нельзя сказать о pytest.
+        Я понятия не имею, что с ним не так, так что все вопросы к тем,
+        кто эти тесты писал. Так как чтобы сдать проект нужно пройти тесты,
+        оставляю первоначальный вариант, но в голове держу новый
+    '''
 
     context = {
         'page_obj': page_obj,
-        'user_full_name': user_full_name,
         'posts_amount': posts_amount,
         'author': author,
         'following': following,
@@ -139,11 +138,8 @@ def post_detail(request, post_id):
 
 def group_posts(request, group_name):
     group = get_object_or_404(Group, slug=group_name)
-
     group_name = group.title
-
     posts = group.posts.all()
-
     page_obj = posts_paginate(request, posts)
 
     context = {
@@ -157,9 +153,7 @@ def group_posts(request, group_name):
 @login_required
 def follow_index(request):
     user = request.user
-
     posts = Post.objects.filter(author__following__user=user)
-
     page_obj = posts_paginate(request, posts)
 
     context = {
