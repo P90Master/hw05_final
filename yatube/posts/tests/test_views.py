@@ -263,20 +263,31 @@ class TaskPagesTests(TestCase):
         user2 = TaskPagesTests.user2
 
         Follow.objects.create(user=user, author=user2)
+        # Не совсем понял зачем, если мы итак создаем пост в преамбуле setUpClass()
+        Post.objects.create(
+            author=user2,
+            text='Тестовый пост',
+        )
 
         response = self.authorized_client.get(reverse(
             'posts:follow_index',
         ))
         posts_list = response.context['page_obj']
         self.assertTrue(
-            len(posts_list) == 1
+            len(posts_list) == 2
         )
 
     def test_follow_index_guest(self):
         """Проверка содержимого избранного у пользователя без подписок"""
+        user2 = TaskPagesTests.user2
         response = self.authorized_client.get(reverse(
             'posts:follow_index',
         ))
+        # Пост автора, на которого user1 не подписан
+        Post.objects.create(
+            author=user2,
+            text='Тестовый пост',
+        )
 
         posts_list = response.context['page_obj']
         self.assertTrue(
