@@ -263,10 +263,11 @@ class TaskPagesTests(TestCase):
         user2 = TaskPagesTests.user2
 
         Follow.objects.create(user=user, author=user2)
-        # Не совсем понял зачем, если мы итак создаем пост в преамбуле setUpClass()
-        Post.objects.create(
+        # Не совсем понял зачем, если мы итак создаем пост в преамбуле
+        # setUpClass()
+        post = Post.objects.create(
             author=user2,
-            text='Тестовый пост',
+            text='Тестовый пост 2',
         )
 
         response = self.authorized_client.get(reverse(
@@ -275,6 +276,11 @@ class TaskPagesTests(TestCase):
         posts_list = response.context['page_obj']
         self.assertTrue(
             len(posts_list) == 2
+        )
+        self.assertTrue(
+            # Сортировка по дате: новый -> старый
+            # Поэтому пост post 1-ый в списке
+            posts_list[0].text == post.text
         )
 
     def test_follow_index_guest(self):
