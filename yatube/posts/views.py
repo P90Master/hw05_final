@@ -91,19 +91,10 @@ def profile(request, username):
     posts_amount = posts.count()
 
     user = request.user
-    followers = author.following.all()
-    users_followers = [follower.user for follower in followers]
-    following = user in users_followers
-    # following = Follow.objects.filter(user=user, author=author).exists()
-    # Pytest выдает ошибку:
-    # TypeError: 'AnonymousUser' object is not iterable
-    '''
-        upd: метод, который вы посоветовали работает исправно,
-        и мои тесты с ним не конфликтуют, чего нельзя сказать о pytest.
-        Я понятия не имею, что с ним не так, так что все вопросы к тем,
-        кто эти тесты писал. Так как чтобы сдать проект нужно пройти тесты,
-        оставляю первоначальный вариант, но в голове держу новый
-    '''
+    # followers = author.following.all()
+    # users_followers = [follower.user for follower in followers]
+    # following = user in users_followers
+    following = Follow.objects.filter(user=user, author=author).exists()
 
     context = {
         'page_obj': page_obj,
