@@ -10,7 +10,12 @@
 ```
 pip install -r requirements.txt
 ```
-- В папке с файлом manage.py выполнить команду:
+- В папке с файлом manage.py выполнить миграции:
 ```
-python3 manage.py runserver
+python manage.py migrate
 ```
+- Запуск проекта:
+```
+python manage.py runserver
+```
+Проект доступен по адресу http://localhost:8000/
